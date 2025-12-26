@@ -1,0 +1,17 @@
+base_image_size: 224
+depth_mult:
+  min: 0.6
+  max: 2.0
+width_mult:
+  min: 0.6
+  max: 2.0
+res_mult:
+  min: 0.75
+  max: 1.5
+defaults:
+  batch_size: 128
+  epochs: 5
+  num_workers: 8
+  persistent_workers: true
+  amp: true
+

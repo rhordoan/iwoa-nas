@@ -18,6 +18,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--no_persistent_workers", action="store_true", help="Disable persistent workers.")
     parser.add_argument("--no_amp", action="store_true", help="Disable AMP.")
     parser.add_argument("--max_train_batches", type=int, default=None, help="Optional cap per epoch for fast tests.")
+    parser.add_argument("--max_val_batches", type=int, default=None, help="Optional cap for validation.")
     parser.add_argument("--device", type=str, default=None, help="Force device (cuda or cpu).")
     parser.add_argument("--seed", type=int, default=42, help="Random seed.")
     parser.add_argument("--json_out", type=Path, default=None, help="Optional path to save JSON result.")
@@ -37,6 +38,7 @@ def main() -> None:
         amp=not args.no_amp,
         device=args.device,
         max_train_batches=args.max_train_batches,
+        max_val_batches=args.max_val_batches,
         seed=args.seed,
     )
     result = evaluator.evaluate_candidate(cand)

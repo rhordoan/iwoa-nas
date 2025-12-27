@@ -10,7 +10,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision
 import torchvision.transforms as T
-from torch.cuda.amp import GradScaler, autocast
+from torch.amp import GradScaler, autocast
 
 
 class ObjectiveFn(Protocol):
@@ -84,6 +84,7 @@ class CIFAR100Evaluator:
         amp: bool = True,
         device: Optional[str] = None,
         max_train_batches: Optional[int] = None,
+        max_val_batches: Optional[int] = None,
         seed: int = 42,
     ) -> None:
         self.data_root = data_root
@@ -95,6 +96,7 @@ class CIFAR100Evaluator:
         self.amp = amp
         self.device = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu"))
         self.max_train_batches = max_train_batches
+        self.max_val_batches = max_val_batches
         self.seed = seed
         torch.manual_seed(seed)
         np.random.seed(seed)
@@ -185,7 +187,7 @@ class CIFAR100Evaluator:
         model = self._build_model(cand).to(self.device)
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.AdamW(model.parameters(), lr=2e-3, weight_decay=2e-5)
-        scaler = GradScaler(enabled=self.amp and self.device.type == "cuda")
+        scaler = GradScaler(device=self.device.type, enabled=self.amp and self.device.type == "cuda")
 
         train_loader, val_loader = self._make_dataloaders(image_size)
         effective_epochs = max(1, int(round(self.epochs * cand.depth_mult)))
@@ -197,7 +199,7 @@ class CIFAR100Evaluator:
                 images = images.to(self.device, non_blocking=True)
                 labels = labels.to(self.device, non_blocking=True)
                 optimizer.zero_grad(set_to_none=True)
-                with autocast(enabled=self.amp and self.device.type == "cuda"):
+                with autocast(device_type=self.device.type, enabled=self.amp and self.device.type == "cuda"):
                     logits = model(images)
                     loss = criterion(logits, labels)
                 scaler.scale(loss).backward()
@@ -211,14 +213,16 @@ class CIFAR100Evaluator:
             correct = 0
             total = 0
             with torch.no_grad():
-                for images, labels in val_loader:
+                for batch_idx, (images, labels) in enumerate(val_loader):
                     images = images.to(self.device, non_blocking=True)
                     labels = labels.to(self.device, non_blocking=True)
-                    with autocast(enabled=self.amp and self.device.type == "cuda"):
+                    with autocast(device_type=self.device.type, enabled=self.amp and self.device.type == "cuda"):
                         logits = model(images)
                     preds = logits.argmax(dim=1)
                     correct += (preds == labels).sum().item()
                     total += labels.size(0)
+                    if self.max_val_batches and batch_idx + 1 >= self.max_val_batches:
+                        break
             val_acc = correct / max(1, total)
             best_val_acc = max(best_val_acc, val_acc)
 

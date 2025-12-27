@@ -73,7 +73,7 @@ def train_llm_ranker(
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
         num_train_epochs=num_train_epochs,
-        evaluation_strategy="epoch",
+        eval_strategy="epoch",
         save_strategy="no",
         seed=seed,
         logging_steps=50,

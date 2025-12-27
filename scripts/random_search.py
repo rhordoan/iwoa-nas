@@ -16,6 +16,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=123, help="RNG seed.")
     parser.add_argument("--data_root", type=str, default="./data", help="Dataset directory.")
     parser.add_argument("--max_train_batches", type=int, default=None, help="Optional cap per epoch (debug).")
+    parser.add_argument("--max_val_batches", type=int, default=None, help="Optional cap per validation epoch (debug).")
     parser.add_argument("--device", type=str, default=None, help="Device override.")
     parser.add_argument("--resume", action="store_true", help="Append without truncating existing CSV.")
     return parser.parse_args()
@@ -35,6 +36,7 @@ def main() -> None:
         amp=bool(space.get("defaults", {}).get("amp", True)),
         device=args.device,
         max_train_batches=args.max_train_batches,
+        max_val_batches=args.max_val_batches,
         seed=args.seed,
     )
 
